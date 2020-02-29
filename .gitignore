@@ -56,3 +56,5 @@ dkms.conf
 benchmark
 validate
 *.mk
+trace
+sorted_trace

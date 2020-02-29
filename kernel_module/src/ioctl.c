@@ -46,6 +46,8 @@
 
 extern struct miscdevice npheap_dev;
 
+static DEFINE_MUTEX(np_lock);
+
 int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
 {
     return 0;
@@ -70,11 +72,13 @@ void npheap_exit(void)
 // If exist, return the data.
 long npheap_lock(struct npheap_cmd __user *user_cmd)
 {
+  mutex_lock(&np_lock);
     return 0;
 }
 
 long npheap_unlock(struct npheap_cmd __user *user_cmd)
 {
+  mutex_unlock(&np_lock);
     return 0;
 }
 
