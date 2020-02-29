@@ -22,10 +22,10 @@
 //
 ////////////////////////////////////////////////////////////////////////
 //
-//   Author:  Hung-Wei Tseng
+//   Authors:  Nicholas Kory
 //
 //   Description:
-//     Skeleton of NPHeap Pseudo Device
+//     NPHeap Pseudo Device
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -71,7 +71,7 @@ void npheap_exit(void)
 long npheap_lock(struct npheap_cmd __user *user_cmd)
 {
     return 0;
-}     
+}
 
 long npheap_unlock(struct npheap_cmd __user *user_cmd)
 {
