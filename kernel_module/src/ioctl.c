@@ -46,6 +46,7 @@
 
 extern struct miscdevice npheap_dev;
 
+// declares linux/mutex.h mutex and assigns it parameter name
 static DEFINE_MUTEX(np_lock);
 
 int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
