@@ -71,7 +71,8 @@ struct rb_root mytree = RB_ROOT;
 // The rb tree node implementation.
 struct mytype {
   	struct rb_node node;
-  	char *keystring;
+  	unsigned long keystring;  //use offset for keystring
+    struct npheap_cmd node_cmd;  //data for NPHeap
   }; //struct mytype
 
 
@@ -81,15 +82,15 @@ struct mytype {
 // string: the data value we're searching for
 //
 // returns: the node we're looking for if found or null if not found
-struct mytype *my_search(struct rb_root *root, char *string)
+struct mytype *my_search(struct rb_root *root, unsigned long keystring)
 {
   	struct rb_node *node = root->rb_node;
 
   	while (node) {
   		struct mytype *data = container_of(node, struct mytype, node);
-		int result;
+		long long result;
 
-		result = strcmp(string, data->keystring);
+		result = keystring - data->keystring;
 
 		if (result < 0)
   			node = node->rb_left;
@@ -115,7 +116,7 @@ int my_insert(struct rb_root *root, struct mytype *data)
   // Figure out where to put new node
   while (*new) {
     struct mytype *this = container_of(*new, struct mytype, node);
-    int result = strcmp(data->keystring, this->keystring);
+    long long result = data->keystring - this->keystring;
 
   parent = *new;
     if (result < 0)
@@ -164,11 +165,56 @@ return 1;
 // library, the executable area etc).
 //
 // struct vm_area_struct {
-//         struct mm_struct * vm_mm;       VM area parameters
-//         unsigned long vm_start;
-//         unsigned long vm_end;
-//         pgprot_t vm_page_prot;
-//         unsigned short vm_flags;
+// 	struct mm_struct * vm_mm;	/* The address space we belong to. */
+// 	unsigned long vm_start;		/* Our start address within vm_mm. */
+// 	unsigned long vm_end;		/* The first byte after our end address
+// 					   within vm_mm. */
+//
+// 	/* linked list of VM areas per task, sorted by address */
+// 	struct vm_area_struct *vm_next;
+//
+// 	pgprot_t vm_page_prot;		/* Access permissions of this VMA. */
+// 	unsigned long vm_flags;		/* Flags, listed below. */
+//
+// 	struct rb_node vm_rb;
+//
+// 	/*
+// 	 * For areas with an address space and backing store,
+// 	 * linkage into the address_space->i_mmap prio tree, or
+// 	 * linkage to the list of like vmas hanging off its node, or
+// 	 * linkage of vma in the address_space->i_mmap_nonlinear list.
+// 	 */
+// 	union {
+// 		struct {
+// 			struct list_head list;
+// 			void *parent;	/* aligns with prio_tree_node parent */
+// 			struct vm_area_struct *head;
+// 		} vm_set;
+//
+// 		struct prio_tree_node prio_tree_node;
+// 	} shared;
+//
+// 	/*
+// 	 * A file's MAP_PRIVATE vma can be in both i_mmap tree and anon_vma
+// 	 * list, after a COW of one of the file pages.  A MAP_SHARED vma
+// 	 * can only be in the i_mmap tree.  An anonymous MAP_PRIVATE, stack
+// 	 * or brk vma (with NULL file) can only be in an anon_vma list.
+// 	 */
+// 	struct list_head anon_vma_node;	/* Serialized by anon_vma->lock */
+// 	struct anon_vma *anon_vma;	/* Serialized by page_table_lock */
+//
+// 	/* Function pointers to deal with this struct. */
+// 	struct vm_operations_struct * vm_ops;
+//
+// 	/* Information about our backing store: */
+// 	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE
+// 					   units, *not* PAGE_CACHE_SIZE */
+// 	struct file * vm_file;		/* File we map to (can be NULL). */
+// 	void * vm_private_data;		/* was vm_pte (shared mem) */
+//
+// #ifdef CONFIG_NUMA
+// 	struct mempolicy *vm_policy;	/* NUMA policy for the VMA */
+// #endif
 // };
 
 // The npheap_cmd struct.
@@ -190,7 +236,17 @@ return 1;
 // returns: 0 if successful [TODO] maybe more
 int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
 {
+    unsigned long offset = vma->vm_pgoff << PAGE_SHIFT; // pg. 426
     unsigned long size = vma->vm_end - vma->vm_start;
+
+    // If it's not already there, allocate space and insert into rb tree.
+    if ((my_search(&mytree, offset)) == NULL) {
+
+    }
+    // Else it is there so remap it
+    else {
+      //remap_pfn_range(vma, vma->vm_start, [TODO], size, vma->vm_page_prot);
+    }
     return 0;
 }  //npheap_mmap()
 
