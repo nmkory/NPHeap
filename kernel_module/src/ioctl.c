@@ -236,16 +236,27 @@ return 1;
 // returns: 0 if successful [TODO] maybe more
 int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-    unsigned long offset = vma->vm_pgoff << PAGE_SHIFT; // pg. 426
+    struct mytype new_node;
+    phys_addr_t phys_addr;
+
+    unsigned long offset = vma->vm_pgoff; // already calculated in user library
     unsigned long size = vma->vm_end - vma->vm_start;
 
     // If it's not already there, allocate space and insert into rb tree.
     if ((my_search(&mytree, offset)) == NULL) {
+      printk("This works!\n");
+
+      new_node.keystring = offset;
+      new_node.node_cmd.offset = offset;
+      new_node.node_cmd.size = size;
+      new_node.node_cmd.data = kmalloc(size, GFP_KERNEL);
+      phys_addr = virt_to_phys(new_node.node_cmd.data);  //deref to get vi
+      remap_pfn_range(vma, vma->vm_start, phys_addr, size, vma->vm_page_prot);
 
     }
     // Else it is there so remap it
-    else {
-      //remap_pfn_range(vma, vma->vm_start, [TODO], size, vma->vm_page_prot);
+    else {  //     pfn = physical address of kernel memory
+      //remap_pfn_range(vma, vma->vm_start, [TODO: pfn], size, vma->vm_page_prot);
     }
     return 0;
 }  //npheap_mmap()
