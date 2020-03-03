@@ -246,6 +246,7 @@ int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
       new_node = kmalloc(sizeof(struct mytype), GFP_KERNEL);
       printk("kmalloc successful\n");
       new_node->keystring = offset;
+      //new_node->node_cmd.op = 1;
       new_node->node_cmd.offset = offset;
       new_node->node_cmd.size = size;
       new_node->node_cmd.data = kmalloc(size, GFP_KERNEL);
@@ -325,8 +326,12 @@ long npheap_unlock(struct npheap_cmd __user *user_cmd)
 // returns: the size of the struct we're looking for or 0 if not found
 long npheap_getsize(struct npheap_cmd __user *user_cmd)
 {
+  struct mytype *getsize_node;
+  struct npheap_cmd *cmd = kmalloc(sizeof(struct npheap_cmd), GFP_KERNEL);
+  copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
 
-  struct mytype *getsize_node = my_search(&mytree, user_cmd->offset);
+  getsize_node = my_search(&mytree, cmd->offset);
+  kfree(cmd);
 
   printk("inside getsize\n");
 
@@ -346,13 +351,18 @@ long npheap_getsize(struct npheap_cmd __user *user_cmd)
 // returns: 0 if successful [TODO] maybe more
 long npheap_delete(struct npheap_cmd __user *user_cmd)
 {
-    struct mytype *delete_node = my_search(&mytree, user_cmd->offset);
+    struct mytype *delete_node;
+    struct npheap_cmd *cmd = kmalloc(sizeof(struct npheap_cmd), GFP_KERNEL);
+    copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
+
+    delete_node = my_search(&mytree, cmd->offset);
 
     if (delete_node) {
     	rb_erase(&delete_node->node, &mytree);
       kfree(delete_node->node_cmd.data);
     	kfree(delete_node);
     }
+    kfree(cmd);
     return 0;
 }  //npheap_delete()
 
