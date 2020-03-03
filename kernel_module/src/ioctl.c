@@ -246,7 +246,7 @@ int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
       new_node = kmalloc(sizeof(struct mytype), GFP_KERNEL);
       printk("kmalloc successful\n");
       new_node->keystring = offset;
-      //new_node->node_cmd.op = 1;
+      //new_node->node_cmd.op = 1;   // [TODO] does this need to be used?
       new_node->node_cmd.offset = offset;
       new_node->node_cmd.size = size;
       new_node->node_cmd.data = kmalloc(size, GFP_KERNEL);
@@ -326,15 +326,18 @@ long npheap_unlock(struct npheap_cmd __user *user_cmd)
 // returns: the size of the struct we're looking for or 0 if not found
 long npheap_getsize(struct npheap_cmd __user *user_cmd)
 {
+  //Create a temp node ptr and copy the user command over.
   struct mytype *getsize_node;
   struct npheap_cmd *cmd = kmalloc(sizeof(struct npheap_cmd), GFP_KERNEL);
   copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
 
+  //Search the rb tree for our node and assign it to temp node ptr. Free mem.
   getsize_node = my_search(&mytree, cmd->offset);
   kfree(cmd);
 
   printk("inside getsize\n");
 
+  //If we don't find it, return 0. Otherwise return it's size.
   if (getsize_node == NULL)
     return 0;
   else{
@@ -351,17 +354,21 @@ long npheap_getsize(struct npheap_cmd __user *user_cmd)
 // returns: 0 if successful [TODO] maybe more
 long npheap_delete(struct npheap_cmd __user *user_cmd)
 {
+    //Create a temp node ptr and copy user command.
     struct mytype *delete_node;
     struct npheap_cmd *cmd = kmalloc(sizeof(struct npheap_cmd), GFP_KERNEL);
     copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
 
+    //Search for the node in the rb tree.
     delete_node = my_search(&mytree, cmd->offset);
 
+    //If we found it, delete it from tree and the other mem.
     if (delete_node) {
     	rb_erase(&delete_node->node, &mytree);
       kfree(delete_node->node_cmd.data);
     	kfree(delete_node);
     }
+    //Free copied user data.
     kfree(cmd);
     return 0;
 }  //npheap_delete()
