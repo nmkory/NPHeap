@@ -236,28 +236,41 @@ return 1;
 // returns: 0 if successful [TODO] maybe more
 int npheap_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-    struct mytype new_node;
-    phys_addr_t phys_addr;
-
     unsigned long offset = vma->vm_pgoff; // already calculated in user library
     unsigned long size = vma->vm_end - vma->vm_start;
+    struct mytype *new_node = my_search(&mytree, offset);
 
     // If it's not already there, allocate space and insert into rb tree.
-    if ((my_search(&mytree, offset)) == NULL) {
-      printk("This works!\n");
+    if (new_node == NULL) {
+      printk("Inside mmap creating new node\n");
+      new_node = kmalloc(sizeof(struct mytype), GFP_KERNEL);
+      printk("kmalloc successful\n");
+      new_node->keystring = offset;
+      new_node->node_cmd.offset = offset;
+      new_node->node_cmd.size = size;
+      new_node->node_cmd.data = kmalloc(size, GFP_KERNEL);
 
-      new_node.keystring = offset;
-      new_node.node_cmd.offset = offset;
-      new_node.node_cmd.size = size;
-      new_node.node_cmd.data = kmalloc(size, GFP_KERNEL);
-      phys_addr = virt_to_phys(new_node.node_cmd.data);  //deref to get vi
-      remap_pfn_range(vma, vma->vm_start, phys_addr, size, vma->vm_page_prot);
+      printk("reached remap\n");
+      remap_pfn_range(vma,
+                      vma->vm_start,
+                      virt_to_phys((void *)(new_node->node_cmd.data))
+                        >> PAGE_SHIFT,
+                      size,
+                      vma->vm_page_prot);
+      my_insert(&mytree, new_node);
 
     }
     // Else it is there so remap it
-    else {  //     pfn = physical address of kernel memory
-      //remap_pfn_range(vma, vma->vm_start, [TODO: pfn], size, vma->vm_page_prot);
+    else {
+      printk("Inside mmap mapping existing node\n");
+      remap_pfn_range(vma,
+                      vma->vm_start,
+                      virt_to_phys((void *)(new_node->node_cmd.data))
+                        >> PAGE_SHIFT,
+                      size,
+                      vma->vm_page_prot);
     }
+    printk("reached return\n");
     return 0;
 }  //npheap_mmap()
 
@@ -312,7 +325,17 @@ long npheap_unlock(struct npheap_cmd __user *user_cmd)
 // returns: the size of the struct we're looking for or 0 if not found
 long npheap_getsize(struct npheap_cmd __user *user_cmd)
 {
+
+  struct mytype *getsize_node = my_search(&mytree, user_cmd->offset);
+
+  printk("inside getsize\n");
+
+  if (getsize_node == NULL)
     return 0;
+  else{
+    printk("found\n");
+    return getsize_node->node_cmd.size;
+  }
 }  //npheap_getsize()
 
 
@@ -323,6 +346,13 @@ long npheap_getsize(struct npheap_cmd __user *user_cmd)
 // returns: 0 if successful [TODO] maybe more
 long npheap_delete(struct npheap_cmd __user *user_cmd)
 {
+    struct mytype *delete_node = my_search(&mytree, user_cmd->offset);
+
+    if (delete_node) {
+    	rb_erase(&delete_node->node, &mytree);
+      kfree(delete_node->node_cmd.data);
+    	kfree(delete_node);
+    }
     return 0;
 }  //npheap_delete()
 
