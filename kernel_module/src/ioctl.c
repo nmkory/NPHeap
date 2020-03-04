@@ -332,7 +332,7 @@ long npheap_getsize(struct npheap_cmd __user *user_cmd)
   copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
 
   //Search the rb tree for our node and assign it to temp node ptr. Free mem.
-  getsize_node = my_search(&mytree, cmd->offset);
+  getsize_node = my_search(&mytree, cmd->offset / PAGE_SIZE);
   kfree(cmd);
 
   printk("inside getsize\n");
@@ -360,7 +360,7 @@ long npheap_delete(struct npheap_cmd __user *user_cmd)
     copy_from_user(cmd, user_cmd, sizeof(struct npheap_cmd));
 
     //Search for the node in the rb tree.
-    delete_node = my_search(&mytree, cmd->offset);
+    delete_node = my_search(&mytree, cmd->offset / PAGE_SIZE);
 
     //If we found it, delete it from tree and the other mem.
     if (delete_node) {
